@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/filmes")
 public class FilmeController {
@@ -21,5 +23,10 @@ public class FilmeController {
     {
         FilmeDto filmeDto = filmeService.pesquisarFilme(id);
         return ResponseEntity.ok(filmeDto);
+    }
+    @GetMapping("/filmes")
+    public ResponseEntity<List<FilmeDto>> buscarFilmes()
+    {
+        return ResponseEntity.ok().body(filmeService.listarFilmes());
     }
 }
