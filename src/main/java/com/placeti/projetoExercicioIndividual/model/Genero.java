@@ -3,6 +3,7 @@ package com.placeti.projetoExercicioIndividual.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -21,6 +22,7 @@ public class Genero {
     private String nome;
 
     @OneToMany(mappedBy = "genero", fetch = FetchType.LAZY)
+    @ToString.Exclude
     private List<Filme> filmes;
 
 }
