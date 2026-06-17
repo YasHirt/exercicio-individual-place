@@ -2,18 +2,17 @@ package com.placeti.projetoExercicioIndividual.controller;
 
 import com.placeti.projetoExercicioIndividual.dto.FilmeDto;
 import com.placeti.projetoExercicioIndividual.services.FilmeService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/filmes")
 public class FilmeController {
-    public final FilmeService filmeService;
+    private final FilmeService filmeService;
 
     public FilmeController(FilmeService filmeService) {
         this.filmeService = filmeService;
@@ -24,9 +23,32 @@ public class FilmeController {
         FilmeDto filmeDto = filmeService.pesquisarFilme(id);
         return ResponseEntity.ok(filmeDto);
     }
-    @GetMapping("/filmes")
+    @GetMapping()
     public ResponseEntity<List<FilmeDto>> buscarFilmes()
     {
         return ResponseEntity.ok().body(filmeService.listarFilmes());
     }
+    @PostMapping()
+    public ResponseEntity<FilmeDto> incluirFilmes(@Valid @RequestBody FilmeDto filmeDto)
+    {
+        FilmeDto filmedtoDeRetorno = filmeService.incluirFilme(filmeDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(filmedtoDeRetorno);
+    }
+
+    //Método que altera todos os atributos da entidade
+    @PutMapping()
+    public ResponseEntity<FilmeDto> alterarFilmes(@Valid @RequestBody FilmeDto filmeDto)
+    {
+        FilmeDto FilmeDtoDeRetorno = filmeService.alterarFilme(filmeDto);
+        return ResponseEntity.status(HttpStatus.OK).body(FilmeDtoDeRetorno);
+
+    }
+    //Método que deleta um filme do db
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deletarFilme(@Valid @PathVariable Long id)
+    {
+        filmeService.deletarFilme(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
 }

@@ -14,4 +14,10 @@ public class GlobalExceptionHandler {
         ApiErrorDto error = new ApiErrorDto(404, "Not Found", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
+    @ExceptionHandler(GeneroNotFoundException.class)
+    public ResponseEntity<ApiErrorDto> handleGeneroNotFoundException(GeneroNotFoundException ex)
+    {
+        ApiErrorDto error = new ApiErrorDto(404,"Not Found", ex.getMessage() );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
 }
