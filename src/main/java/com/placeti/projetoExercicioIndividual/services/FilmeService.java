@@ -12,7 +12,6 @@ import com.placeti.projetoExercicioIndividual.repository.GeneroRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class FilmeService {
@@ -28,7 +27,7 @@ public class FilmeService {
 
     //Método que vai mostrar filme pelo seu id
 
-    public FilmeDto pesquisarFilme(Long id)
+    public FilmeDto pesquisarFilmePorId(Long id)
     {
         Filme f = filmeRepository.findById(id).orElseThrow(
                 () -> new FilmeNotFoundException("Filme não encontrado com esse id " + id)
@@ -41,7 +40,13 @@ public class FilmeService {
     public List<FilmeDto> listarFilmes()
     {
         //TODO: CUSTOMIZAR ESSE ERRO
-        return filmeRepository.findAll().stream().map(filme -> new FilmeDto(filme.getId(), filme.getNome(), filme.getAssistido(), filme.getGenero().getId(), filme.getAtores().stream().map(Ator::getId).toList())).toList();
+        return filmeRepository.findAll()
+                .stream()
+                .map(filme -> new FilmeDto(filme.getId(), filme.getNome(), filme.getAssistido(), filme.getGenero().getId(), filme.getAtores()
+                        .stream()
+                        .map(Ator::getId)
+                        .toList()))
+                        .toList();
     }
 
     //Método que vai incluir os filmes no banco
@@ -67,6 +72,7 @@ public class FilmeService {
         return new FilmeDto(filmeDeRetorno.getId(), filmeDeRetorno.getNome(), filmeDeRetorno.getAssistido(), filmeDeRetorno.getGenero().getId(), filmeDeRetorno.getAtores().stream().map(Ator::getId).toList());
     }
     //Método que vai atualizar tudo
+    @Transactional
     public FilmeDto alterarFilme(FilmeDto filmeDto)
     {
         if (filmeDto.id() == null)
@@ -88,6 +94,7 @@ public class FilmeService {
         filmeRepository.save(filmeExistente);
         return new FilmeDto(filmeExistente.getId(), filmeExistente.getNome(), filmeExistente.getAssistido(), filmeExistente.getGenero().getId(), filmeExistente.getAtores().stream().map(Ator::getId).toList());
     }
+    @Transactional
     public void deletarFilme(Long id)
     {
         if (id == null)
@@ -100,24 +107,29 @@ public class FilmeService {
         filmeRepository.delete(f);
     }
     @Transactional
-    public FilmeDto atualizarFilme(FilmePatchDTO dtoPatch)
-    {       Genero g = new Genero();
-
-            Filme f = filmeRepository.findById(dtoPatch.id()).orElseThrow(
+    public FilmeDto atualizarFilme(FilmePatchDTO dtoPatch, Long id)
+            //TODO: resolver comportamento cego...e se um ator não for encontrado?
+    {
+            Filme f = filmeRepository.findById(id).orElseThrow(
                     () -> new FilmeNotFoundException("Filme não encontrado com esse id")
             );
             if (dtoPatch.idGenero() != null) {
-                 g = generoRepository.findById(dtoPatch.idGenero()).orElseThrow(
+                Genero g = generoRepository.findById(dtoPatch.idGenero()).orElseThrow(
                         () -> new GeneroNotFoundException("Genero não encontrado com esse id")
                 );
+                if (!dtoPatch.idGenero().equals(f.getGenero().getId()))
+                {
+                    f.setGenero(g);
+                }
             }
-            //e se nao achar um ator?
-            if (!dtoPatch.idAtores().isEmpty()) {
+            if (dtoPatch.idAtores() != null && !dtoPatch.idAtores().isEmpty()) { //Previne NullPointerException
                  List<Ator> atores = atorRepository.findAllById(dtoPatch.idAtores());
-                 if (a)
-
+                    if (!atores.equals(f.getAtores()))
+                    {
+                        f.setAtores(atores);
+                    }
             }
-            if (!dtoPatch.nome().isBlank() && !f.getNome().equals(dtoPatch.nome()))
+            if (dtoPatch.nome() != null && !dtoPatch.nome().isBlank() && !f.getNome().equals(dtoPatch.nome()))
             {
                 f.setNome(dtoPatch.nome());
             }
@@ -125,10 +137,8 @@ public class FilmeService {
             {
                 f.setAssistido(dtoPatch.assistido());
             }
-            if (dtoPatch.idGenero() != null && !Objects.equals(f.getGenero().getId(), dtoPatch.idGenero()))
-            {
-                f.setGenero(g);
-            }
+            Filme filmePersistidoAtualizado = filmeRepository.save(f);
+        return new FilmeDto(filmePersistidoAtualizado.getId(), filmePersistidoAtualizado.getNome(), filmePersistidoAtualizado.getAssistido(), filmePersistidoAtualizado.getGenero().getId(), filmePersistidoAtualizado.getAtores().stream().map(Ator::getId).toList());
 
     }
 

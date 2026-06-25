@@ -6,18 +6,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.sql.SQLException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(FilmeNotFoundException.class)
-    public ResponseEntity<ApiErrorDto> handleFilmeNotFoundException(FilmeNotFoundException ex)
-    {
+    public ResponseEntity<ApiErrorDto> handleFilmeNotFoundException(FilmeNotFoundException ex) {
         ApiErrorDto error = new ApiErrorDto(404, "Not Found", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
+
     @ExceptionHandler(GeneroNotFoundException.class)
-    public ResponseEntity<ApiErrorDto> handleGeneroNotFoundException(GeneroNotFoundException ex)
-    {
-        ApiErrorDto error = new ApiErrorDto(404,"Not Found", ex.getMessage() );
+    public ResponseEntity<ApiErrorDto> handleGeneroNotFoundException(GeneroNotFoundException ex) {
+        ApiErrorDto error = new ApiErrorDto(404, "Not Found", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(AtorNotFoundException.class)
+    public ResponseEntity<ApiErrorDto> handleAtorNotFoundException(AtorNotFoundException ex) {
+        ApiErrorDto error = new ApiErrorDto(404, "Not Found", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 }

@@ -1,6 +1,7 @@
 package com.placeti.projetoExercicioIndividual.controller;
 
 import com.placeti.projetoExercicioIndividual.dto.FilmeDto;
+import com.placeti.projetoExercicioIndividual.dto.FilmePatchDTO;
 import com.placeti.projetoExercicioIndividual.services.FilmeService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -20,7 +21,7 @@ public class FilmeController {
     @GetMapping("/{id}")
     public ResponseEntity<FilmeDto> buscarPeloId(@PathVariable("id") Long id)
     {
-        FilmeDto filmeDto = filmeService.pesquisarFilme(id);
+        FilmeDto filmeDto = filmeService.pesquisarFilmePorId(id);
         return ResponseEntity.ok(filmeDto);
     }
     @GetMapping()
@@ -45,10 +46,26 @@ public class FilmeController {
     }
     //Método que deleta um filme do db
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deletarFilme(@Valid @PathVariable Long id)
+    public ResponseEntity deletarFilme(@Valid @PathVariable Long id)
     {
         filmeService.deletarFilme(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+    @PatchMapping("/{id}")
+    public ResponseEntity<FilmeDto> atualizarFilmes(@RequestBody @Valid FilmePatchDTO filmePatchDTO, @PathVariable Long id)
+    {
+        /*
+        * Exemplo de Requisição:
+        * {   "id": 2,
+              "nome": "Matrix",
+              "assistido": true,
+              "idGenero": null,
+              "idAtores": [1]
+          }
+        * O que for ser mantido pode ser null
+        */
+        FilmeDto filmeDto = filmeService.atualizarFilme(filmePatchDTO, id);
+        return ResponseEntity.status(HttpStatus.OK).body(filmeDto);
     }
 
 }
