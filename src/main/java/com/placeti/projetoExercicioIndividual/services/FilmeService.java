@@ -9,6 +9,9 @@ import com.placeti.projetoExercicioIndividual.model.Genero;
 import com.placeti.projetoExercicioIndividual.repository.AtorRepository;
 import com.placeti.projetoExercicioIndividual.repository.FilmeRepository;
 import com.placeti.projetoExercicioIndividual.repository.GeneroRepository;
+// REVISÃO: Prefira usar org.springframework.transaction.annotation.Transactional em vez de
+// jakarta.transaction.Transactional. A versão do Spring oferece mais opções de configuração
+// (propagation, isolation, readOnly) e é a convencional em projetos Spring Boot.
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -33,6 +36,9 @@ public class FilmeService {
         Filme f = filmeRepository.findById(id).orElseThrow(
                 () -> new FilmeNotFoundException("Filme não encontrado com esse id " + id)
         );
+        // REVISÃO: f.getGenero() pode ser null se o filme foi salvo sem gênero (genero_id nullable no banco).
+        // f.getGenero().getId() vai lançar NullPointerException nesse caso.
+        // Verifique se genero não é null antes de chamar getId(), ou garanta que genero_id é NOT NULL no banco.
         return new FilmeDto(f.getId(), f.getNome(), f.getAssistido(), f.getGenero().getId(), f.getAtores().stream().map(Ator::getId).toList());
     }
 
@@ -41,6 +47,8 @@ public class FilmeService {
     public List<FilmeDto> listarFilmes()
     {
         //TODO: CUSTOMIZAR ESSE ERRO
+        // REVISÃO: O mesmo risco de NullPointerException existe aqui: filme.getGenero() pode ser null.
+        // Corrija a constraint no banco (NOT NULL) ou trate o null no mapeamento.
         return filmeRepository.findAll().stream().map(filme -> new FilmeDto(filme.getId(), filme.getNome(), filme.getAssistido(), filme.getGenero().getId(), filme.getAtores().stream().map(Ator::getId).toList())).toList();
     }
 
@@ -48,6 +56,11 @@ public class FilmeService {
     @Transactional //Garante atomicidade, princípio do tudo ou nada
     public FilmeDto incluirFilme(FilmeDto filmeDto)
     {
+        // REVISÃO: Use IllegalArgumentException em vez de RuntimeException genérica.
+        // Além disso, o exercício pede que a validação do campo de texto (nome em branco)
+        // fique no Service, mas aqui ela está sendo feita pelo @NotBlank no DTO (nível de controller).
+        // Adicione uma verificação explícita: if (filmeDto.nome() == null || filmeDto.nome().isBlank())
+        // e lance uma exceção adequada com status 400.
         if (filmeDto.id() != null)
         {
             throw new RuntimeException("Id deve ser nula para criação");
@@ -55,6 +68,10 @@ public class FilmeService {
         Genero genero = generoRepository.findById(filmeDto.idGenero()).orElseThrow(
                 () -> new GeneroNotFoundException("Genero não encontrado com esse id " + filmeDto.idGenero())
         );
+        // REVISÃO: findAllById silenciosamente ignora IDs que não existem no banco.
+        // Se você enviar [1, 2, 999] e o ator 999 não existir, a lista retorna só [ator1, ator2] sem erro.
+        // Após a chamada, compare listaDeAtores.size() com filmeDto.idAtores().size().
+        // Se forem diferentes, lance um AtorNotFoundException (depois de corrigir essa classe).
         //TODO: RESOLVER O BUG SE UM ID DE ATOR NÃO FOR ENCONTRADO
         List<Ator> listaDeAtores = atorRepository.findAllById(filmeDto.idAtores());
         Filme filme = new Filme();
@@ -66,6 +83,10 @@ public class FilmeService {
         Filme filmeDeRetorno = filmeRepository.save(filme);
         return new FilmeDto(filmeDeRetorno.getId(), filmeDeRetorno.getNome(), filmeDeRetorno.getAssistido(), filmeDeRetorno.getGenero().getId(), filmeDeRetorno.getAtores().stream().map(Ator::getId).toList());
     }
+    // REVISÃO: alterarFilme faz uma atualização completa (PUT), mas está sem @Transactional.
+    // Sem essa anotação, se save() falhar no meio do processo, as mudanças anteriores
+    // no objeto filmeExistente não serão revertidas automaticamente pelo Spring.
+    // Adicione @Transactional aqui igual ao incluirFilme.
     //Método que vai atualizar tudo
     public FilmeDto alterarFilme(FilmeDto filmeDto)
     {
@@ -101,7 +122,26 @@ public class FilmeService {
     }
     @Transactional
     public FilmeDto atualizarFilme(FilmePatchDTO dtoPatch)
-    {       Genero g = new Genero();
+    {
+            // REVISÃO (CRÍTICO): Esse método não compila por dois motivos:
+            // 1. "if (a)" na linha 117 referencia uma variável 'a' que não existe.
+            //    Você provavelmente queria aplicar os atores ao filme: f.setAtores(atores).
+            //    Mova a lógica de setAtores para dentro do bloco if e remova o "if (a)".
+            // 2. O método tem retorno FilmeDto mas não retorna nada.
+            //    Após atualizar o objeto 'f', salve com filmeRepository.save(f)
+            //    e retorne um novo FilmeDto com os dados atualizados.
+            //
+            // REVISÃO (DESIGN): Genero g = new Genero() inicializa um Genero vazio antes da verificação null.
+            // Se idGenero for null, 'g' fica como Genero vazio e pode ser usado por engano.
+            // Declare como: Genero g = null; e trate o caso null no bloco abaixo.
+            //
+            // REVISÃO: dtoPatch.idAtores() pode ser null, e chamar .isEmpty() em null
+            // lança NullPointerException. Verifique null antes: if (dtoPatch.idAtores() != null && !dtoPatch.idAtores().isEmpty())
+            //
+            // REVISÃO: dtoPatch.nome() pode ser null no PATCH (campo opcional).
+            // Chamar .isBlank() em null lança NullPointerException.
+            // Verifique: if (dtoPatch.nome() != null && !dtoPatch.nome().isBlank() && ...)
+            Genero g = new Genero();
 
             Filme f = filmeRepository.findById(dtoPatch.id()).orElseThrow(
                     () -> new FilmeNotFoundException("Filme não encontrado com esse id")
@@ -129,7 +169,38 @@ public class FilmeService {
             {
                 f.setGenero(g);
             }
+            // REVISÃO: falta filmeRepository.save(f) e o return aqui.
 
     }
 
+    // (REVISAO) O que eu recomendaria para o método acima:
+//    @Transactional
+//    public FilmeDto atualizarFilme(FilmePatchDTO dto) {
+//        Filme f = filmeRepository.findById(dto.id())
+//                .orElseThrow(() -> new FilmeNotFoundException("Filme não encontrado com esse id"));
+//
+//        if (dto.idGenero() != null) {
+//            Genero genero = generoRepository.findById(dto.idGenero())
+//                    .orElseThrow(() -> new GeneroNotFoundException("Genero não encontrado com esse id"));
+//            f.setGenero(genero);
+//        }
+//
+//        if (dto.idAtores() != null && !dto.idAtores().isEmpty()) {
+//            List<Ator> atores = atorRepository.findAllById(dto.idAtores());
+//            if (atores.size() != dto.idAtores().size()) {
+//                throw new AtorNotFoundException("Um ou mais atores não foram encontrados");
+//            }
+//            f.setAtores(atores);
+//        }
+//
+//        if (dto.nome() != null && !dto.nome().isBlank()) {
+//            f.setNome(dto.nome());
+//        }
+//
+//        if (dto.assistido() != null) {
+//            f.setAssistido(dto.assistido());
+//        }
+//
+//        return new FilmeDto(f);
+//    }
 }

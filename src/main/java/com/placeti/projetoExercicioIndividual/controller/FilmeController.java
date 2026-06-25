@@ -35,7 +35,12 @@ public class FilmeController {
         return ResponseEntity.status(HttpStatus.CREATED).body(filmedtoDeRetorno);
     }
 
-    //Método que altera todos os atributos da entidade
+    // REVISÃO: O exercício pede PATCH /filmes/{id} para atualização parcial, não PUT sem id na URL.
+    // PUT é para substituição completa do recurso; PATCH é para atualização parcial.
+    // Corrija para @PatchMapping("/{id}"), receba o id como @PathVariable
+    // e use FilmePatchDTO no body (que representa atualização parcial).
+    // O método que você implementou em FilmeService (atualizarFilme) é o que deve ser chamado aqui.
+    // Também falta o endpoint PATCH conectado ao método atualizarFilme do service.
     @PutMapping()
     public ResponseEntity<FilmeDto> alterarFilmes(@Valid @RequestBody FilmeDto filmeDto)
     {
@@ -45,6 +50,10 @@ public class FilmeController {
     }
     //Método que deleta um filme do db
     @DeleteMapping("/{id}")
+    // REVISÃO: @Valid em @PathVariable não tem efeito para validações de Bean Validation
+    // (como @NotNull, @Min etc.) sem adicionar @Validated na classe.
+    // Para PathVariable simples como Long id, isso não causa problema funcional agora,
+    // mas o @Valid aqui é desnecessário e enganoso. Remova-o.
     public ResponseEntity<String> deletarFilme(@Valid @PathVariable Long id)
     {
         filmeService.deletarFilme(id);

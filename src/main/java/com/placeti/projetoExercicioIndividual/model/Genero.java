@@ -23,6 +23,9 @@ public class Genero {
 
     @OneToMany(mappedBy = "genero", fetch = FetchType.LAZY)
     @ToString.Exclude
+    // REVISÃO: @ToString.Exclude evita loop infinito no toString, mas o @Data também gera
+    // equals() e hashCode() usando esse campo. Acessar filmes dentro de equals/hashCode
+    // pode disparar uma consulta extra ou causar LazyInitializationException fora de transação.
     private List<Filme> filmes;
 
 }
