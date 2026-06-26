@@ -1,4 +1,4 @@
 package com.placeti.projetoExercicioIndividual.dto;
 
-public record registerUserResponse() {
+public record RegisterUserResponse(String username, String name) {
 }
