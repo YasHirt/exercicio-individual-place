@@ -20,21 +20,22 @@ public class Usuario implements UserDetails {
     private Long id;
     private String name;
     private String email;
-    private String password;
+    @Column(name = "password")
+    private String senha;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return null;
     }
     @Override
+    //Necessário quando a autenticação não for manual
     public @Nullable String getPassword() {
-        return "";
+        return this.senha;
     }
-    //Este método não é para o banco de dados. Ele é o método que o Spring Security vai chamar internamente quando ele precisar saber: "Qual é a credencial única que identifica esse sujeito?".
-    //Necessario no pós login
     @Override
+    //O getUsername() não é para o login, mas sim para representar a identidade do usuário depois que ele já foi autenticado
     public String getUsername() {
-        return "";
+        return this.email;
     }
     @Override
     public boolean isAccountNonExpired() {
